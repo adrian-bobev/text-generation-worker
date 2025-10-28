@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор на Приказки</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .book-result {
+            display: none;
+            margin-top: 40px;
+        }
+
+        .book-title {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .book-description {
+            font-style: italic;
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .scene {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .scene h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .scene p {
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .motivation-end {
+            font-style: italic;
+            color: #666;
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .rate-limit-info {
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Генератор на Приказки ✨</h1>
+
+        <form id="book-form">
+            <div class="form-group">
+                <label for="name">Име на детето:</label>
+                <input type="text" id="name" name="name" required maxlength="50" placeholder="Мария">
+            </div>
+
+            <div class="form-group">
+                <label for="age">Възраст:</label>
+                <input type="number" id="age" name="age" min="2" max="10" required placeholder="5">
+            </div>
+
+            <div class="form-group">
+                <label for="gender">Пол:</label>
+                <select id="gender" name="gender" required>
+                    <option value="">Избери...</option>
+                    <option value="boy">Момче</option>
+                    <option value="girl">Момиче</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="topic">Тема на приказката:</label>
+                <input type="text" id="topic" name="topic" required maxlength="200" 
+                       placeholder="космос и звезди">
+            </div>
+
+            <button type="submit" id="submit-btn">Създай приказка</button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Създаваме вълшебна приказка...<br>Моля, изчакайте 20-30 секунди ✨</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="book-result" id="book-result">
+            <h2 class="book-title" id="book-title"></h2>
+            <div class="book-description" id="book-description"></div>
+            <div id="book-scenes"></div>
+            <div class="motivation-end" id="motivation-end"></div>
+        </div>
+
+        <div class="rate-limit-info" id="rate-limit-info"></div>
+    </div>
+
+    <script>
+        // CONFIGURATION
+        const WORKER_URL = 'https://book-generation-worker.YOUR_SUBDOMAIN.workers.dev';
+        const API_KEY = ''; // Optional: Set if you configured API_KEY in worker
+
+        // DOM Elements
+        const form = document.getElementById('book-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const bookResult = document.getElementById('book-result');
+        const rateLimitInfo = document.getElementById('rate-limit-info');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Get form data
+            const formData = {
+                name: document.getElementById('name').value.trim(),
+                age: parseInt(document.getElementById('age').value),
+                gender: document.getElementById('gender').value,
+                topic: document.getElementById('topic').value.trim()
+            };
+
+            // Reset UI
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            bookResult.style.display = 'none';
+            submitBtn.disabled = true;
+
+            try {
+                // Prepare headers
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+
+                if (API_KEY) {
+                    headers['X-API-Key'] = API_KEY;
+                }
+
+                // Make request
+                const response = await fetch(WORKER_URL, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(formData)
+                });
+
+                // Get rate limit info
+                const rateLimit = response.headers.get('X-RateLimit-Limit');
+                const rateLimitWindow = response.headers.get('X-RateLimit-Window');
+                if (rateLimit && rateLimitWindow) {
+                    const hours = parseInt(rateLimitWindow) / 3600;
+                    rateLimitInfo.textContent = `Лимит: ${rateLimit} заявки на ${hours > 1 ? hours + ' часа' : 'час'}`;
+                }
+
+                // Handle response
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+
+                const book = await response.json();
+                displayBook(book);
+
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+
+        function displayBook(book) {
+            document.getElementById('book-title').textContent = book.bookTitle;
+            document.getElementById('book-description').textContent = book.shortDescription;
+            document.getElementById('motivation-end').textContent = book.motivationEnd;
+
+            const scenesContainer = document.getElementById('book-scenes');
+            scenesContainer.innerHTML = '';
+
+            book.scenes.forEach((scene, index) => {
+                const sceneDiv = document.createElement('div');
+                sceneDiv.className = 'scene';
+                
+                const sceneTitle = document.createElement('h4');
+                sceneTitle.textContent = `Сцена ${index + 1}`;
+                sceneDiv.appendChild(sceneTitle);
+
+                // Split text by double newlines for paragraphs
+                const paragraphs = scene.text.split('\n\n');
+                paragraphs.forEach(para => {
+                    if (para.trim()) {
+                        const p = document.createElement('p');
+                        p.textContent = para.trim();
+                        sceneDiv.appendChild(p);
+                    }
+                });
+
+                scenesContainer.appendChild(sceneDiv);
+            });
+
+            bookResult.style.display = 'block';
+            bookResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function showError(message) {
+            error.textContent = `❌ ${message}`;
+            error.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
+
